@@ -33,14 +33,8 @@ class FINDir:
         ff = fin.FIN(f)
         ff.set_time_offset(last_time)
 
-        elem = None
         elem = ff.element(element_name)
         if element_name is "Time": last_time = max(elem)
-#        if element_name is "Time":
-#          elem = [x + last_time for x in ff.element(element_name)]
-#          last_time = max(elem)
-#        else:
-#          elem = ff.element(element_name)
         data.extend(elem)
 
       return data
