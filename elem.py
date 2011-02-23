@@ -9,33 +9,22 @@ import findir
 
 def floatlist(lst): return [float(i) for i in lst]
 
-f="/home/tfogal/data/bu-biometallomics/BottomLeft/TOPLEFTFIN2/ABC192.FIN2"
-header=[]
-odd_filename=''
-date=''
-with open(f, "r") as finf:
-  title = finf.readline().strip()
-  date = finf.readline().strip()
-  odd_filename = finf.readline().strip()
-  number = finf.readline().strip()
-  zero = finf.readline().strip()
-  bunch_of_sixteens = finf.readline().strip()
-  cps = finf.readline().strip()
-  header = finf.readline().strip().split(",")
-
+d="/home/tfogal/data/bu-biometallomics/BottomLeft/TOPLEFTFIN2"
+fd = findir.FINDir(d, "ABC*FIN2")
+date = fd.date()
+header = fd.elements()
+run_filename = fd.run_filename()
 
 fig = plt.figure()
 
-findata = fin.FIN(f)
-
 i,j = 4,5
 
-time = findata.element("Time")
-elem0 = findata.element(header[i])
-elem1 = findata.element(header[j])
+time = fd.element("Time")
+elem0 = fd.element(header[i])
+elem1 = fd.element(header[j])
 
 fig = plt.figure(1)
-fig.suptitle(odd_filename + " (" + date + ")", fontsize=14)
+fig.suptitle(run_filename + " (" + date + ")", fontsize=14)
 ax = plt.subplot(311)
 ax.set_ylabel(header[i])
 plt.plot(time,elem0)
