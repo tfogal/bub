@@ -23,13 +23,21 @@ class FINDir:
     files you care about.'''
     self._directory = directory
     self._pattern = pattern
+    self._date = None
+    self._elements = None
+    self._runfilename = None
+
+  def _files(self):
+    files = glob.glob(self._directory + os.sep + self._pattern)
+    files.sort()
+    return files
 
   def element(self, element_name):
       '''Gets the full data for the given element, by parsing every FIN file in
       the directory.  This will take some time!'''
       data = []
       last_time = 0.0
-      for f in glob.iglob(self._directory + os.sep + self._pattern):
+      for f in self._files():
         ff = fin.FIN(f)
         ff.set_time_offset(last_time)
 
