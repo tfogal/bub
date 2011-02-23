@@ -9,6 +9,14 @@ class FIN:
     self._header = None
     self._date = None
     self._time_offset = None
+    self._run_file = None
+
+  def _read_header(self, openfile):
+    openfile.readline().strip() # "title"
+    self._date = openfile.readline().strip()
+    self._run_file = openfile.readline().strip()
+    for i in xrange(0, 4): openfile.readline()
+    self._header = openfile.readline().strip().split(",")
 
   def set_time_offset(self, offset):
     '''The first column of all FIN files is a time specification.  However,
@@ -24,14 +32,7 @@ class FIN:
     element does not exist in the FIN file.  For this method, "Time" is
     considered an element.'''
     with open(self._finfile, "r") as fin:
-      title = fin.readline().strip()
-      self._date = fin.readline().strip()
-      odd_filename = fin.readline().strip()
-      number = fin.readline().strip()
-      zero = fin.readline().strip()
-      bunch_of_sixteen = fin.readline().strip()
-      cps = fin.readline().strip()
-      self._header = fin.readline().strip().split(",")
+      self._read_header(fin)
 
       # Yes, we could simply read every field and return out the one the user
       # wanted.  However the memory bound on this approach is the size of the
@@ -52,14 +53,40 @@ class FIN:
 
       return data
 
+  def date(self):
+    """Returns the date of this FIN file's creation, as output by the scanner.
+    This is assumed to be the second line of the FIN file."""
+    if self._date is None:
+      with open(self._finfile, "r") as ff:
+        title = ff.readline().strip()
+        self._date = ff.readline().strip()
+        ff.close()
+    return self._date
+
+  def elements(self):
+    """Returns a list of the elements stored in this FIN.  These are the keys
+    which are used with self.element()!"""
+    if self._header is None:
+      # We haven't parsed the FIN file yet.  Parse just the header so we can
+      # pull out the element names.
+      with open(self._finfile, "r") as fin: self._read_header(fin)
+    assert(self._header is not None)
+    return self._header
+
+  def run_filename(self):
+    '''Third line of the FIN file.'''
+    if self._run_file is None:
+      with open(self._finfile, "r") as fin: self._read_header(fin)
+    return self._run_file
+
 if __name__ == "__main__":
+  import datetime as dt
   import unittest
 
   class TestFIN(unittest.TestCase):
 
     def _write_simple(self, tofile):
       '''Writes a simple FIN file from some sample data I have.'''
-      import datetime as dt
       with open(tofile, "w") as fin:
         fin.write("Finnigan MAT ELEMENT Raw Data\n")
         fin.write(dt.datetime.now().strftime("%A, %B, %Y %H:%M:%S") + "\n")
@@ -67,10 +94,10 @@ if __name__ == "__main__":
         fin.write("287\n0\n")
         fin.write("16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16\n")
         fin.write("CPS\n")
-        elems = ["Time", "Li7", "Ca44", "Mn55", "Cu63", "Zn66", "Zn70", "As75",
-                 "Se77", "Se82", "Rb85", "Mo95", "Ce140", "Au197", "Pb207",
-                 "Pb208", "P31"]
-        fin.write(",".join(elems) + "\n")
+        self.elems = ["Time", "Li7", "Ca44", "Mn55", "Cu63", "Zn66", "Zn70",
+                      "As75", "Se77", "Se82", "Rb85", "Mo95", "Ce140", "Au197",
+                      "Pb207", "Pb208", "P31"]
+        fin.write(",".join(self.elems) + "\n")
         d1 = [0.695000, 53733.500000, 5762171.500000, 723712.000000,
               6566.000000, 12124.500000, 29440.500000, 1262.000000,
               269480.000000, 41456.500000, 11366.500000, 631.000000,
@@ -90,6 +117,12 @@ if __name__ == "__main__":
     def tearDown(self):
       import os
       os.remove(self.testfile)
+
+    def test_date(self):
+      '''Ensure we read in the date hidden in the file.'''
+      fin = FIN(self.testfile)
+      self.assertEquals(fin.date(),
+                        dt.datetime.now().strftime("%A, %B, %Y %H:%M:%S"))
 
     def test_parse(self):
       fin = FIN(self.testfile)
@@ -112,5 +145,11 @@ if __name__ == "__main__":
       self.assertEqual(fin.element("Time"), lst)
       # make sure we don't add the offset to other fields
       self.assertEqual(fin.element("P31"), [1069296.0, 1506640.0])
+
+    def test_elements(self):
+      fin = FIN(self.testfile)
+      fin_elems = fin.elements()
+      for i in xrange(0, len(self.elems)):
+        self.assertEqual(self.elems[i], fin_elems[i])
 
   unittest.main()
