@@ -100,9 +100,12 @@ if __name__ == "__main__":
     now, unfortunately.  Sorry...'''
 
     def setUp(self):
-      self._fd = FINDir(os.sep.join([os.getenv("HOME"), "data",
-                                     "bu-biometallomics", "BottomLeft",
-                                     "TOPLEFTFIN2"]), "ABC*FIN2")
+      test1 = os.sep.join([os.getenv("HOME"), "data",
+                           "bu-biometallomics", "BottomLeft",
+                           "TOPLEFTFIN2"])
+      test2 = os.sep.join([os.getenv("HOME"), "data", "bu-biometallomics",
+                           "new-data", "fins"])
+      self._fd = FINDir(test1, "ABC*FIN2")
 
     def test_element_entries(self):
       self.assertEqual(len(self._fd.element("Li7")), 22099)
