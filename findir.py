@@ -12,9 +12,13 @@
 # handle this by figuring out the max time code, and using our FIN() classes'
 # set_time_offset method to get the appropriate time code.
 import glob
+import math
 import os
 
 import fin
+
+def validate(): return os.getenv("BUB_NO_VALIDATE") is None
+def equalf(a,b): EPSILON=1E-2; return math.fabs(a-b) < EPSILON
 
 class FINDir:
   def __init__(self, directory, pattern):
@@ -26,6 +30,7 @@ class FINDir:
     self._date = None
     self._elements = None
     self._runfilename = None
+    self._scan_time = None # time to scan one line
 
   def _files(self):
     files = glob.glob(self._directory + os.sep + self._pattern)
@@ -44,11 +49,11 @@ class FINDir:
         # Cache some metadata clients sometimes want to query.
         if self._elements is None: self._elements = ff.elements()
         if self._runfilename is None: self._runfilename = ff.run_filename()
+        if self._scan_time is None: self._scan_time = ff.time()
 
         # All the run filenames should be the same... else the user is mixing
         # data from different data sets.
-        if self._runfilename != ff.run_filename() and \
-           os.getenv("BUB_NO_VALIDATE") is None:
+        if validate() and self._runfilename != ff.run_filename():
           raise UserWarning("I saw a 'run filename' (3rd line of a FIN file) "
                             "of " + self._runfilename + ", but I'm looking at "
                             + f + " right now, and it has a run filename of "
@@ -59,6 +64,8 @@ class FINDir:
                             "'BUB_NO_VALIDATE' to get around this, but you're "
                             "probably processing unassociated data together, "
                             "which does not make sense.")
+        if validate() and not equalf(self._scan_time, ff.time()):
+          raise UserWarning("Scan times are changing.")
 
         elem = ff.element(element_name)
         if element_name is "Time": last_time = max(elem)
@@ -75,6 +82,11 @@ class FINDir:
     assert(self._date is not None)
     return self._date
 
+  def time_per_scanline(self):
+    if self._scan_time is None:
+      self.element("Time") # could be anything, we just need to read data.
+    return self._scan_time
+
   def elements(self):
     '''Returns the list of elements in this data set.'''
     if self._elements is None:
@@ -90,6 +102,12 @@ class FINDir:
       ff = fin.FIN(self._files()[0])
       self._runfilename = ff.run_filename()
     return self._runfilename
+
+  def scanning_time_per_line(self):
+    if self._scan_time is None:
+      ff = fin.FIN(self._files()[0])
+      self._scan_time = ff.time()
+    return self._scan_time
 
 if __name__ == "__main__":
   import unittest
@@ -143,5 +161,8 @@ if __name__ == "__main__":
 
     def test_runfilename(self):
       self.assertEqual(self._fd.run_filename(), "101510lm2.FIN")
+
+    def test_scan_time(self):
+      self.assert_(equalf(self._fd.scanning_time_per_line(), 198.185997))
 
   unittest.main()
