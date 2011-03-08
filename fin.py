@@ -10,6 +10,7 @@ class FIN:
     self._date = None
     self._time_offset = None
     self._run_file = None
+    self._scan_time = None
 
   def _read_header(self, openfile):
     openfile.readline().strip() # "title"
@@ -78,6 +79,10 @@ class FIN:
     if self._run_file is None:
       with open(self._finfile, "r") as fin: self._read_header(fin)
     return self._run_file
+
+  def time(self):
+    tm = self.element("Time")
+    return tm[-1] - tm[0]
 
 if __name__ == "__main__":
   import datetime as dt
@@ -151,5 +156,9 @@ if __name__ == "__main__":
       fin_elems = fin.elements()
       for i in xrange(0, len(self.elems)):
         self.assertEqual(self.elems[i], fin_elems[i])
+
+    def test_time(self):
+      fin = FIN(self.testfile)
+      self.assertEqual(fin.time(), 1.388 - 0.695)
 
   unittest.main()
