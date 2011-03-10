@@ -31,6 +31,7 @@ class FINDir:
     self._elements = None
     self._runfilename = None
     self._scan_time = None # time to scan one line
+    self._points_per_file = None
 
   def _files(self):
     files = glob.glob(self._directory + os.sep + self._pattern)
@@ -69,6 +70,9 @@ class FINDir:
 
         elem = ff.element(element_name)
         if element_name is "Time": last_time = max(elem)
+        if self._points_per_file is None: self._points_per_file = len(elem)
+        if validate() and self._points_per_file != len(elem):
+          raise UserWarning("Points per file changing.")
         data.extend(elem)
 
       return data
@@ -108,6 +112,18 @@ class FINDir:
       ff = fin.FIN(self._files()[0])
       self._scan_time = ff.time()
     return self._scan_time
+
+  def _data_points_per_line(self):
+    if self._points_per_file is None:
+      ff = fin.FIN(self._files()[0])
+      # we know "Time" will always exist.
+      self._points_per_file = len(ff.element("Time"))
+    return self._points_per_file
+
+  def _n_files(self): return len(self._files())
+
+  def x(self): return self._data_points_per_line()
+  def y(self): return self._n_files()
 
 if __name__ == "__main__":
   import unittest
@@ -164,5 +180,15 @@ if __name__ == "__main__":
 
     def test_scan_time(self):
       self.assert_(equalf(self._fd.scanning_time_per_line(), 198.185997))
+
+    def test_data_points(self):
+      self.assertEqual(self._fd._data_points_per_line(), 287)
+
+    def test_n_files(self):
+      self.assertEqual(self._fd._n_files(), 77)
+
+    def text_xy(self):
+      self.assertEqual(self._fd.x(), 287)
+      self.assertEqual(self._fd.y(), 77)
 
   unittest.main()
