@@ -32,6 +32,8 @@ class FINDir:
     self._runfilename = None
     self._scan_time = None # time to scan one line
     self._points_per_file = None
+    if not os.path.exists(self._directory):
+      raise UserWarning("Invalid path: %s" % self._directory)
 
   def _files(self):
     files = glob.glob(self._directory + os.sep + self._pattern)
