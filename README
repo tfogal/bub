@@ -1,0 +1,6 @@
+This is BUB, the BU-Biometallomics analysis tool.  It can parse FIN and
+SLS files and generate images and raw data, formatted appropriately.
+Raw data can be imported into ImageVis3D for further analysis.
+
+If you're not actively involved in the SCI-BU collaboration, it's
+unlikely that any of this will make sense to you.
