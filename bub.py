@@ -4,8 +4,6 @@ from optparse import OptionParser
 import os
 import sys
 
-from PIL import Image, ImageDraw
-
 import fin
 import findir
 import sls
@@ -63,6 +61,12 @@ def write_nrrd(field, field_data, dims):
     nhdr.write("spacings: 2.6 1.0\n")
 
 def write_image(filename, dimensions, data, color):
+  try:
+    from PIL import Image, ImageDraw
+  except ImportError:
+    print "PIL not available; skipping Image output."
+    return
+
   img = None
   if color:
     img = Image.new('RGB', dimensions)
