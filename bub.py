@@ -89,7 +89,7 @@ def write_image(filename, dimensions, data, color):
           c = linearcolor(v, (0,0,0),(254,254,254), five_percent,twenty_percent)
         else:
           c = linearcolor(v, (128,255,0),(255,0,100), minmax[0],minmax[1])
-        draw.point((x,y), fill=c)
+        draw.point((x,y), fill=(int(c[0]), int(c[1]), int(c[2])))
       else:
         # despite being represented internally as 32-bit values, no PIL
         # exporter (that I can find) can actually write out a 32-bit greyscale
