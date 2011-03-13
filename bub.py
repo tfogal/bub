@@ -125,7 +125,7 @@ if __name__ == "__main__":
   fdir = findir.FINDir(options.findir, options.finglob)
   fields = fdir.elements()
 
-  status("Reading SLS information..")
+  status("Reading SLS information...")
   s = sls.SLS(options.sls)
   validate_spot_size(fdir, s)
 
