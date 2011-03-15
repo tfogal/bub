@@ -59,7 +59,7 @@ def write_nrrd(field, field_data, dims):
     nhdr.write("max: %f\n" % max(field_data))
     nhdr.write("datafile: %s\n" % field)
     nhdr.write("sizes: %d %d\n" % (dims[0], dims[1]))
-    nhdr.write("spacings: 2.6 1.0\n")
+    nhdr.write("spacings: 1.0 2.6\n")
 
 def background(data, dimensions):
   '''Calculates the average background noise value.'''
@@ -118,7 +118,7 @@ def write_image(filename, dimensions, data, color):
 
   with open(filename, "w") as png:
     # upsample the data to be a size Noel and Tim seem to like.
-    i = img.resize((int(dimensions[0]*2.6), dimensions[1]))
+    i = img.resize((int(dimensions[0]), int(dimensions[1]*2.6)))
     i.save(png, 'PNG')
 
 def validate_options(options):
