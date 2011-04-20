@@ -1,6 +1,7 @@
 #!python
 from __future__ import with_statement
 from optparse import OptionParser
+import math
 import os
 import sys
 
@@ -60,6 +61,24 @@ def write_nrrd(field, field_data, dims):
     nhdr.write("sizes: %d %d\n" % (dims[0], dims[1]))
     nhdr.write("spacings: 2.6 1.0\n")
 
+def background(data, dimensions):
+  '''Calculates the average background noise value.'''
+  n=0
+  total=0.0
+  for y in xrange(0, dimensions[1]):
+    idx = y*dimensions[0]
+    total += sum(data[idx:idx+10])
+    n += 10
+  return total / n
+
+def subtract_background(data, dimensions):
+  '''Subtracts out the background noise from the data.'''
+  bg = background(data, dimensions)
+  minimum = min(data)
+  for i in xrange(0, dimensions[0]*dimensions[1]):
+    # use max to ensure we don't get negative values
+    data[i] = max(minimum, data[i] - bg)
+    
 def write_image(filename, dimensions, data, color):
   try:
     from PIL import Image, ImageDraw
@@ -113,6 +132,32 @@ def validate_options(options):
     print >> sys.stderr, "This should not be possible..."
     sys.exit(1)
 
+def is_outlier(stencil):
+  '''Identifies if a particular datum is an outlier.  Expects to get the datum
+     as well as neighborhood information.  We expect to receive a 9-point
+     stencil, with the datum at index [4].'''
+  assert(len(stencil) == 9)
+  total = math.fsum(stencil[0:4] + stencil[5:9])
+  avg = total / 9.0
+  diff = math.fabs(stencil[4] - avg)
+  cutoff = 0.95 * avg
+  if diff > cutoff: return True
+  return False
+
+def avg(l): return math.fsum(l) / len(l)
+
+def average_out_outliers(data, dimensions):
+  minimum = min(data)
+  for y in xrange(1, dimensions[1]-1):
+    for x in xrange(1, dimensions[0]-1):
+      idx1 = (y-1)*dimensions[0] + x-1 # line above
+      idx2 = (y-0)*dimensions[0] + x-1
+      idx3 = (y+1)*dimensions[0] + x-1 # line below
+      stencil = data[idx1:idx1+3] + data[idx2:idx2+3] + data[idx3:idx3+3]
+      if is_outlier(stencil):
+        data[idx2+1] = avg(data[idx1:idx1+3] + [data[idx2]] + [data[idx2+2]] +
+                           data[idx3:idx3+3])
+
 if __name__ == "__main__":
   parser = OptionParser()
   parser.add_option("-f", "--findir", dest="findir",
@@ -121,6 +166,8 @@ if __name__ == "__main__":
                     help="Read sizing information from SLS", metavar="SLS")
   parser.add_option("-g", "--glob", dest="finglob", default="*FIN2",
                     help="Filename glob to use for FIN files ('*FIN2').")
+  parser.add_option("-o", "--outliers", dest="outliers", default=False,
+                    action="store_true", help="Average out the outliers.")
   options,args = parser.parse_args()
 
   validate_options(options)
@@ -139,6 +186,8 @@ if __name__ == "__main__":
     if field != "Time":
       status("Processing field: '%s'..." % field)
       field_data = fdir.element(field)
+      if(options.outliers):
+        average_out_outliers(field_data, dimensions)
       use_color = True
       write_image(field + ".png", dimensions, field_data, use_color)
       write_nrrd(field, field_data, dimensions)
