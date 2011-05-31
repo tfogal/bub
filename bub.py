@@ -3,6 +3,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import logging as log
+import findir
 
 class BUB:
   """Holds the main BUB window.  The basic layout is a 3-element VBox
@@ -25,8 +26,45 @@ class BUB:
     self._window.hide()
     gtk.main_quit()
 
-  def _menuitem(self, arg):
+  def _menu_open(self, arg):
     print "arg:", arg
+    fsel = gtk.FileChooserDialog(title="FIN Directory", parent=self._window,
+                                 action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                 buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,
+                                          gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+    response = fsel.run()
+    directory = None
+    if response == gtk.RESPONSE_OK:
+      directory = fsel.get_filename()
+      print "selected:", directory
+    elif response == gtk.RESPONSE_CANCEL:
+      print "no file selected."
+    else:
+      print "inconceivable!"
+    fsel.destroy()
+    if directory is None: return
+
+    self._findir = findir.FINDir(directory, "*FIN2")
+    print "Loaded FINDir with date", self._findir.date()
+    print "Elements:", self._findir.elements()
+
+    print "okay"
+    self.set_elements(self._findir.elements())
+
+  def set_elements(self, elems):
+    self._vb_channels.destroy()
+    self._vb_chnnels = gtk.VBox(True, 0)
+
+    lbl_raw = gtk.Label("Raw")
+    self._vb_channels.pack_start(lbl_raw, False)
+    for e in elems:
+      if e != "Time":
+        lbl_elem = gtk.Label(e)
+        self._vb_channels.pack_start(lbl_elem, False)
+        lbl_elem.show()
+    self._vb_channels.show()
+
+    self._hb_main.pack_start(self._vb_channels, False)
 
   def _create_menus(self):
     m_file = gtk.Menu()
@@ -35,7 +73,7 @@ class BUB:
     m_file.append(m_file_open)
     m_file.append(m_file_quit)
 
-    m_file_open.connect_object("activate", self._menuitem, "file.open")
+    m_file_open.connect_object("activate", self._menu_open, "file.open")
     m_file_quit.connect_object("activate", self.destroy, "file.quit")
 
     m_bar = gtk.MenuBar()
@@ -57,27 +95,35 @@ class BUB:
     self._mainvbox.pack_end(self._status, False)
 
   def _create_main(self):
-    hb_main = gtk.HBox(False, 5)
-    vb_channels = gtk.VBox(True, 0)
+    """The central part of the window.  On the left, we have a vbox, with each
+       entry being a channel in the data.  On the right we have a scrollable
+       image that details the currently selected channel."""
+    self._hb_main = gtk.HBox(False, 5)
+    self._vb_channels = gtk.VBox(True, 0)
 
-    hb_main.pack_start(vb_channels, False)
+    self._hb_main.pack_start(self._vb_channels, False)
 
+    # LHS: channels
     lbl_raw = gtk.Label("Raw")
     lbl_zn70 = gtk.Label("Zn70")
     lbl_cu63 = gtk.Label("Cu63")
-    vb_channels.pack_start(lbl_raw, False)
-    vb_channels.pack_start(lbl_zn70, False)
-    vb_channels.pack_start(lbl_cu63, False)
+    self._vb_channels.pack_start(lbl_raw, False)
+    self._vb_channels.pack_start(lbl_zn70, False)
+    self._vb_channels.pack_start(lbl_cu63, False)
 
     lbl_raw.show(); lbl_zn70.show(); lbl_cu63.show()
-    vb_channels.show()
+    self._vb_channels.show()
 
+    # RHS: scrollable image viewer
+    swindow = gtk.ScrolledWindow()
+    swindow.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    swindow.set_border_width(10)
     lbl_test = gtk.Label("This is where the zoomable/scrollable image will go")
     lbl_test.show()
-    hb_main.pack_end(lbl_test, True, True)
+    self._hb_main.pack_end(lbl_test, True, True)
 
-    hb_main.show()
-    self._mainvbox.pack_start(hb_main)
+    self._hb_main.show()
+    self._mainvbox.pack_start(self._hb_main)
 
 if __name__ == "__main__":
   app = BUB()
