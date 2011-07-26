@@ -136,6 +136,7 @@ class BUB:
     raw_img = self._findir.element(element)
     width, height = (self._findir.x(), self._findir.y())
     self._set_image(raw_img, (width, height))
+    self._swindow.set_size_request(width+20, height+20)
 
   def _set_image(self, img_data, dimensions):
     pil_img = create_pil_image(img_data, dimensions)
