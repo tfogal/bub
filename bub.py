@@ -7,6 +7,7 @@ from PIL import Image, ImageDraw
 
 import findir
 from outlier import Outlier
+from filter_ui import FilterUI
 
 def lerp(x, x0,x1, y0,y1): return y0 + (x - x0)*(float(y1-y0) / float(x1-x0))
 
@@ -96,14 +97,20 @@ class BUB:
 
     self._create_main()
 
+  def _outlier_finished(self, outf, data=None):
+    raw_img = self._findir.element(self._active_field)
+    width, height = (self._findir.x(), self._findir.y())
+    self._set_image(outf.get_filter().get_output(), (width,height))
+    outf.destroy()
+
   def _outlier_filter(self, something):
-    print "outlier!", something
     raw_img = self._findir.element(self._active_field)
     width, height = (self._findir.x(), self._findir.y())
     outf = Outlier()
     outf.set_input(raw_img, (width,height))
-    outf.execute()
-    self._set_image(outf.get_output(), (width,height))
+    outf_ui = FilterUI(outf)
+    outf_ui.connect("execution-success", self._outlier_finished)
+    outf_ui.create_ui()
 
   def _create_elements(self):
     if self._vb_channels != None: self._vb_channels.destroy()
@@ -116,7 +123,6 @@ class BUB:
     self._elements.sort()
     for e in self._elements:
       if e != "Time":
-        print "e:", e
         bt_elem = gtk.Button(e)
         bt_elem.connect_object("clicked", self._element, e)
         self._vb_channels.pack_start(bt_elem, False)
