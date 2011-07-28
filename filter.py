@@ -6,9 +6,13 @@ class Filter:
      underlying filter.'''
   def __init__(self):
     self._parameters = {}
+    self._name = "UnnamedFilter"
 
   def set_parameter(self, key, value, ptype):
     self._parameters[key] = [value, ptype]
+
+  def update_value(self, key, value):
+    self._parameters[key][0] = value
 
   # convenience method to not specify the type
   def set_parameter_floatrange(self, key, value, minval,maxval):
@@ -21,3 +25,5 @@ class Filter:
 
   def get_all_parameters(self):
     return self._parameters
+
+  def name(self): return self._name

@@ -47,12 +47,14 @@ class FilterUI(gobject.GObject):
         sbar.set_digits(2)
         sbar.set_increments(step_increment, step_increment)
         sbar.set_update_policy(gtk.UPDATE_CONTINUOUS)
+        sbar.connect("value-changed", self._update_float, param_name)
         sbar.show()
         hbox.pack_start(sbar)
       if param_type == bool:
         checked = params[k][0]
         cbox = gtk.CheckButton(label=param_name)
         cbox.set_active(checked)
+        cbox.connect("toggled", self._update_boolean, param_name)
         cbox.show()
         hbox.pack_start(cbox)
         
@@ -83,5 +85,14 @@ class FilterUI(gobject.GObject):
     self._window = None
 
   def _execute(self, button):
+    print "Running filter '%s' with parameters:" % self._filter.name()
+    for k in self._filter.get_all_parameters().keys():
+      print "\t", k, "->", self._filter.get_parameter(k)
     self._filter.execute()
     self.emit("execution-success")
+
+  def _update_float(self, sbar, parameter_name):
+    self._filter.update_value(parameter_name, sbar.get_value())
+
+  def _update_boolean(self, srcobj, parameter_name):
+    self._filter.update_value(parameter_name, srcobj.get_active())

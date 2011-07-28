@@ -9,6 +9,7 @@ class Outlier(Filter):
   '''This filter removes outliers within a data set.'''
   def __init__(self):
     Filter.__init__(self)
+    self._name = "Outlier"
     self._input = None
     self._dimensions = None
     self._output = None
