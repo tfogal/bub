@@ -16,9 +16,9 @@ def linearcolor(x, color0,color1, data0,data1):
      color0 is the color at data0; color1 is the color at data1.'''
   assert(data0 <= x and x <= data1)
   return (
-    lerp(x, data0,data1, color0[0],color1[0]),
-    lerp(x, data0,data1, color0[1],color1[1]),
-    lerp(x, data0,data1, color0[2],color1[2])
+    int(lerp(x, data0,data1, color0[0],color1[0])),
+    int(lerp(x, data0,data1, color0[1],color1[1])),
+    int(lerp(x, data0,data1, color0[2],color1[2]))
   )
 
 def create_pil_image(data, dims):
